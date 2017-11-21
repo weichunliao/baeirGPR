@@ -5,19 +5,63 @@
 
 using namespace Rcpp;
 
-// rcpp_hello
-List rcpp_hello();
-RcppExport SEXP _baeirGPR_rcpp_hello() {
+// tcrossprod_t
+SEXP tcrossprod_t(Rcpp::NumericMatrix x, Rcpp::NumericMatrix y, int ifsym, int ifdebug, std::string innername, Rcpp::NumericVector param1, int param2, int ncpu_);
+RcppExport SEXP _baeirGPR_tcrossprod_t(SEXP xSEXP, SEXP ySEXP, SEXP ifsymSEXP, SEXP ifdebugSEXP, SEXP innernameSEXP, SEXP param1SEXP, SEXP param2SEXP, SEXP ncpu_SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_hello());
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type ifsym(ifsymSEXP);
+    Rcpp::traits::input_parameter< int >::type ifdebug(ifdebugSEXP);
+    Rcpp::traits::input_parameter< std::string >::type innername(innernameSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type param1(param1SEXP);
+    Rcpp::traits::input_parameter< int >::type param2(param2SEXP);
+    Rcpp::traits::input_parameter< int >::type ncpu_(ncpu_SEXP);
+    rcpp_result_gen = Rcpp::wrap(tcrossprod_t(x, y, ifsym, ifdebug, innername, param1, param2, ncpu_));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kernelmdot
+SEXP kernelmdot(Rcpp::NumericMatrix x, Rcpp::NumericMatrix y, Rcpp::NumericMatrix b, double betainv, int ifdebug, std::string innername, Rcpp::NumericVector param1, int param2);
+RcppExport SEXP _baeirGPR_kernelmdot(SEXP xSEXP, SEXP ySEXP, SEXP bSEXP, SEXP betainvSEXP, SEXP ifdebugSEXP, SEXP innernameSEXP, SEXP param1SEXP, SEXP param2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type b(bSEXP);
+    Rcpp::traits::input_parameter< double >::type betainv(betainvSEXP);
+    Rcpp::traits::input_parameter< int >::type ifdebug(ifdebugSEXP);
+    Rcpp::traits::input_parameter< std::string >::type innername(innernameSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type param1(param1SEXP);
+    Rcpp::traits::input_parameter< int >::type param2(param2SEXP);
+    rcpp_result_gen = Rcpp::wrap(kernelmdot(x, y, b, betainv, ifdebug, innername, param1, param2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// diagAddConst
+SEXP diagAddConst(Rcpp::NumericMatrix x, double param1, int ifdebug);
+RcppExport SEXP _baeirGPR_diagAddConst(SEXP xSEXP, SEXP param1SEXP, SEXP ifdebugSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type param1(param1SEXP);
+    Rcpp::traits::input_parameter< int >::type ifdebug(ifdebugSEXP);
+    rcpp_result_gen = Rcpp::wrap(diagAddConst(x, param1, ifdebug));
     return rcpp_result_gen;
 END_RCPP
 }
 
+RcppExport SEXP _baeirGPR_rcpp_hello();
+
 static const R_CallMethodDef CallEntries[] = {
-    {"_baeirGPR_rcpp_hello", (DL_FUNC) &_baeirGPR_rcpp_hello, 0},
+    {"_baeirGPR_tcrossprod_t", (DL_FUNC) &_baeirGPR_tcrossprod_t, 8},
+    {"_baeirGPR_kernelmdot", (DL_FUNC) &_baeirGPR_kernelmdot, 8},
+    {"_baeirGPR_diagAddConst", (DL_FUNC) &_baeirGPR_diagAddConst, 3},
+    {"_baeirGPR_rcpp_hello",   (DL_FUNC) &_baeirGPR_rcpp_hello,   0},
     {NULL, NULL, 0}
 };
 
