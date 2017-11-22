@@ -141,15 +141,22 @@ param2 is an scalar
 */
 // t1=system.time(out1<-.Call("tcrossprod", subtrain, subtrain, 1, debug1, kparam$kernelname, kparam$thetarel, param2, ncpu))
 // [[Rcpp::export]]
-SEXP tcrossprod_t (Rcpp::NumericMatrix x, Rcpp::NumericMatrix y, int ifsym, int ifdebug, std::string innername, Rcpp::NumericVector param1, int param2, int ncpu_) {
+SEXP tcrossprod_t (Rcpp::NumericMatrix x, Rcpp::NumericMatrix y, int ifsym, int ifdebug, std::string innername, Rcpp::NumericVector param1, int param2, int ncpu_ = -1) {
   int debug = ifdebug;
   int ifsym2 = ifsym;
 
   // SEXP ret;
   int ret;
   // double *xp, *yp;
-  int ncpu = ncpu_;
+  int ncpu = 1;
   int maxcpu = omp_get_max_threads();
+  if (ncpu_ < 1) {
+    ncpu = maxcpu;
+  } else if (ncpu_ < maxcpu) {
+    ncpu = ncpu_;
+  } else if (ncpu_ > maxcpu) {
+    ncpu = maxcpu;
+  }
   omp_set_num_threads(ncpu);
 
   std::string iname = innername;
@@ -296,11 +303,22 @@ SEXP tcrossprod_t (Rcpp::NumericMatrix x, Rcpp::NumericMatrix y, int ifsym, int 
 //#===============
 // compute kernelmat(x,y) %*% b
 // [[Rcpp::export]]
-SEXP kernelmdot (Rcpp::NumericMatrix x, Rcpp::NumericMatrix y, Rcpp::NumericMatrix b, double betainv, int ifdebug, std::string innername, Rcpp::NumericVector param1, int param2) {
+SEXP kernelmdot (Rcpp::NumericMatrix x, Rcpp::NumericMatrix y, Rcpp::NumericMatrix b, double betainv, int ifdebug, std::string innername, Rcpp::NumericVector param1, int param2, int ncpu_ = -1) {
   int debug = ifdebug;
 
   int ifsym2 = 1;
   int ret;
+
+  int ncpu = 1;
+  int maxcpu = omp_get_max_threads();
+  if (ncpu_ < 1) {
+    ncpu = maxcpu;
+  } else if (ncpu_ < maxcpu) {
+    ncpu = ncpu_;
+  } else if (ncpu_ > maxcpu) {
+    ncpu = maxcpu;
+  }
+  omp_set_num_threads(ncpu);
 
   std::string iname = innername;
 

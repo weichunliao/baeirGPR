@@ -63,7 +63,8 @@ gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
                         init_param = c(10, 2, 0.5), clusters = NULL,
                         optim_rbf_max = 100, optim_trace = 1,
                         optim_report = 5, optim_ard_max = 20,
-                        optim_ard_trace = 1, optim_ard_report = 5) {
+                        optim_ard_trace = 1, optim_ard_report = 5,
+                        ncput = -1) {
 
   if(kernelname == "rbf") {
     kname <- "gaussiandotrel"
@@ -182,7 +183,7 @@ data_part <- function(x, partType="kmeans", nclus=10, iter.max = 100, msize = 13
 }
 
 #method = c("solve", "cg_direct", "cg_ichol")
-gpr_train <- function(train_x, train_y, kparam, method = "solve", ig_tol = 0.01, ncpu = 4) {
+gpr_train <- function(train_x, train_y, kparam, method = "solve", ig_tol = 0.01, ncpu = -1) {
   #now, construct the full matrix bigK
   debug1 <- 0
   param2 <- 1
@@ -366,7 +367,7 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve", ig_tol = 0.01,
   return(list(alpha = xvec, kparam = kparam))
 }
 
-gpr_predict <- function(testmx, trainmx, gprmodel, ncpu = 4) {
+gpr_predict <- function(testmx, trainmx, gprmodel, ncpu = -1) {
   debug1 <- 0
   param2 <- 1
 
@@ -379,19 +380,19 @@ gpr_predict <- function(testmx, trainmx, gprmodel, ncpu = 4) {
 }
 
 
-gpr_train_sr <- function(train_x, train_y, kparam, obslist, ncpu = 4) {
+gpr_train_sr <- function(train_x, train_y, kname, ktheta, kbetainv, csize, in_ncpu) {
   cat("gpr_sr trainer\n")
 
-  csize <- length(obslist)
+  obslist <- c(1:csize)
   cat("gpr_train_sr: subset size=", csize, "\n")
   cat("training data size=", nrow(train_x), "\n")
   flush.console()
 
 
-  subtrain <- train_x[obslist,]
+  subtrain <- train_x[obslist, ]
   debug1 <- 0
   param2 <- 1
-  t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, 1, debug1, kparam$kernelname, kparam$thetarel, param2, ncpu))
+  t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, 1, debug1, kname, ktheta, param2, in_ncpu))
   cat("out1 consumed time:\n")
   print(t1)
 
@@ -399,7 +400,7 @@ gpr_train_sr <- function(train_x, train_y, kparam, obslist, ncpu = 4) {
   sym2 <- 0
   cat("compute kmn\n")
   flush.console()
-  t1 <- system.time(kmn <- tcrossprod_t(subtrain, train_x, sym2, debug1, kparam$kernelname, kparam$thetarel, param2, ncpu))
+  t1 <- system.time(kmn <- tcrossprod_t(subtrain, train_x, sym2, debug1, kname, ktheta, param2, in_ncpu))
 
   cat("kmn consumed time:\n")
   print(t1)
@@ -409,8 +410,9 @@ gpr_train_sr <- function(train_x, train_y, kparam, obslist, ncpu = 4) {
   cat("tcrossprod consumed time:\n")
   print(t1)
 
-  alpha <- solve((kmn_cross + kparam$betainv * out1), kmn %*% train_y)
+  alpha <- solve((kmn_cross + kbetainv * out1), kmn %*% train_y)
 
+  kparam <- list(betainv = kbetainv, kernelname = kname, theta = ktheta)
   return(list(alpha = alpha, kparam = kparam))
 }
 
