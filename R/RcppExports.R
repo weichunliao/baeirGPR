@@ -2,14 +2,14 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 tcrossprod_t <- function(x, y, ifsym, ifdebug, innername, param1, param2, ncpu_ = -1L) {
-    .Call(`_baeirGPR_tcrossprod_t`, x, y, ifsym, ifdebug, innername, param1, param2, ncpu_)
+    .Call('_baeirGPR_tcrossprod_t', PACKAGE = 'baeirGPR', x, y, ifsym, ifdebug, innername, param1, param2, ncpu_)
 }
 
 kernelmdot <- function(x, y, b, betainv, ifdebug, innername, param1, param2, ncpu_ = -1L) {
-    .Call(`_baeirGPR_kernelmdot`, x, y, b, betainv, ifdebug, innername, param1, param2, ncpu_)
+    .Call('_baeirGPR_kernelmdot', PACKAGE = 'baeirGPR', x, y, b, betainv, ifdebug, innername, param1, param2, ncpu_)
 }
 
 diagAddConst <- function(x, param1, ifdebug) {
-    .Call(`_baeirGPR_diagAddConst`, x, param1, ifdebug)
+    .Call('_baeirGPR_diagAddConst', PACKAGE = 'baeirGPR', x, param1, ifdebug)
 }
 

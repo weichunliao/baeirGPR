@@ -1,9 +1,10 @@
-#to be called by users
-#init_param = c(betainv, theta0, theta1)
+#' @useDynLib baeirGPR
+#' @importFrom Rcpp sourceCpp
+# init_param = c(betainv, theta0, theta1)
 gpr_tune <- function (x, y, kernelname = "rbf", ARD = TRUE,
                       init_param = c(10, 2, 0.5), optim_rbf_max = 100,
                       optim_trace = 1, optim_report = 5, optim_ard_max = 15,
-                      optim_ard_trace = 1, optim_ard_report = 5) {
+                      optim_ard_trace = 1, optim_ard_report = 5, in_ncpu = -1) {
 
   if(kernelname == "rbf") {
     kname <- "gaussiandotrel"
@@ -12,29 +13,30 @@ gpr_tune <- function (x, y, kernelname = "rbf", ARD = TRUE,
   }
   cat("gpr_tune: optimizing marginal log-likelihood\n")
 
+
+  param1 <- init_param
   cat("    Using initial value [betainv theta0 theta1]:", param1, "\n")
   flush.console()
-  #param1 = c(10, 2, 0.5)
-  param1 <- init_param
   nfeature <- ncol(x)
+
   ans1 <- optim(param1, loglike_gauss, grad_gauss_loglike, method = "L-BFGS-B",
                 lower = c(1e-6, 1e-6, 1e-6), upper = c(Inf, Inf, Inf),
                 control = list(maxit = optim_rbf_max, trace = optim_trace,
                                REPORT = optim_report, fnscale = -1.0),
-                ds2_train2mx = x, train_y = y)
+                ds2_train2mx = x, train_y = y, ncpu = in_ncpu)
   param1 <- c((ans1$par)[2:3], 0, 0)
   betainv <- (ans1$par)[1]
 
-  cat("[NOARD] Optimal kernel parameter [theta0 theta1] =", param1[1:2], "\n")
-  cat("[NOARD] Optimal kernel parameter betainv =", betainv, "\n")
+  cat("[NOARD] Optimal kernel parameter [theta0 theta1]=", param1[1:2], "\n")
+  cat("[NOARD] Optimal kernel parameter betainv=", betainv, "\n")
 
-  cat("First stage optim (rbf, no ARD) convergence (0: success; 1: maxit reached) =", ans1$convergence, "msg =", ans1$message, "\n")
+  cat("First stage optim (rbf, no ARD) convergence (0: success; 1: maxit reached)=", ans1$convergence, "msg=", ans1$message, "\n")
   flush.console()
 
   if(ARD == FALSE) {
     thetarel <- c(param1[1], 0, 0, rep(param1[2], nfeature))
-    outparam <- list(betainv = betainv, thetarel = thetarel,
-                     nfeature = nfeature, kernelname = kname, ARD = FALSE)
+    outparam <- list(betainv = betainv, thetarel = thetarel, nfeature = nfeature,
+                     kernelname = kname, ARD = FALSE)
   } else {
     cat("Running second stage optim (ARD)\n")
 
@@ -51,32 +53,32 @@ gpr_tune <- function (x, y, kernelname = "rbf", ARD = TRUE,
                   lower = rep(1e-6, length(rel)), upper = rep(Inf, length(rel)),
                   control = list(maxit = optim_ard_max, trace = optim_ard_trace,
                                  REPORT = optim_ard_report, fnscale = -1.0),
-                  ds2_train2mx = x, train_y = y)
+                  ds2_train2mx = x, train_y = y, ncpu = in_ncpu)
     #
-    cat("Second stage optim (RBF with ARD) convergence (0: success; 1: maxit reached) =", ans2$convergence, ", msg =", ans2$message, "\n")
+    cat("Second stage optim (RBF with ARD) convergence (0: success; 1: maxit reached)=", ans2$convergence, "msg=", ans2$message, "\n")
     flush.console()
 
     betainv <- ans2$par[1]
     thetarel <- c(ans2$par[2], 0, 0, ans2$par[3:length(ans2$par)])
     outparam <- list(betainv = betainv, thetarel = thetarel,
-                     nfeature = nfeature, kernelname = kname,
-                     ARD = TRUE, thetarel_noard = thetarel_noard,
+                     nfeature = nfeature, kernelname = kname, ARD = TRUE,
+                     thetarel_noard = thetarel_noard,
                      betainv_noard = betainv_noard)
 
-    cat("Optimal kernel parameter (aRD) betainv =", betainv, "\n")
-    cat("Optimal kernel parameter (ARD) [theta0] =", ans2$par[2], "\n")
-    cat("ARD param (head) =", head(thetarel[4:length(thetarel)], n = 10), "\n")
+    cat("Optimal kernel parameter (aRD) betainv=", betainv, "\n")
+    cat("Optimal kernel parameter (ARD) [theta0]=", ans2$par[2], "\n")
+    cat("ARD param (head)=", head(thetarel[4:length(thetarel)], n = 10), "\n")
   }
   return(outparam)
 }
 
-#tuning using local models
+# tuning using local models
 gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
                         init_param = c(10, 2, 0.5), clusters = NULL,
                         optim_rbf_max = 100, optim_trace = 1,
                         optim_report = 5, optim_ard_max = 20,
                         optim_ard_trace = 1, optim_ard_report = 5,
-                        ncpu = -1) {
+                        ncput = -1, in_ncpu = -1) {
 
   if(kernelname == "rbf") {
     kname <- "gaussiandotrel"
@@ -85,10 +87,9 @@ gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
   }
   cat("gpr_tune_lm: optimizing marginal log-likelihood\n")
 
+  param1 <- init_param
   cat("    Using initial value [betainv theta0 theta1]:", param1, "\n")
   flush.console()
-  #param1 <- c(10, 2, 0.5)
-  param1 <- init_param
   nfeature <- ncol(x)
 
   clus_x <- list()
@@ -103,24 +104,24 @@ gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
 
   ans1 <- optim(param1, loglike_gauss_clus, grad_gauss_loglike_clus,
                 method = "L-BFGS-B", lower = c(1e-6, 1e-6, 1e-6),
-                upper = c(Inf, Inf, Inf),
-                control = list(maxit = optim_rbf_max, trace = optim_trace,
-                               REPORT = optim_report, fnscale = -1.0),
-                train_x_list = clus_x, train_y_list = clus_y)
+                upper = c(Inf, Inf, Inf), control = list(maxit = optim_rbf_max,
+                                                         trace = optim_trace,
+                                                         REPORT = optim_report,
+                                                         fnscale = -1.0),
+                train_x_list = clus_x, train_y_list = clus_y, ncpu = in_ncpu)
   param1 <- c((ans1$par)[2:3], 0, 0)
   betainv <- (ans1$par)[1]
 
-  cat("Optimal kernel parameter [theta0 theta1] =", param1[1:2], "\n")
-  cat("Optimal kernel parameter betainv =", betainv, "\n")
+  cat("Optimal kernel parameter [theta0 theta1]=", param1[1:2], "\n")
+  cat("Optimal kernel parameter betainv=", betainv, "\n")
 
-  cat("First stage optim (rbf, no ARD) convergence (0: success; 1: maxit reached) =", ans1$convergence, ", msg =", ans1$message, "\n")
+  cat("First stage optim (rbf, no ARD) convergence (0: success; 1: maxit reached)=", ans1$convergence, "msg=", ans1$message, "\n")
   flush.console()
 
   if(ARD == FALSE) {
     thetarel <- c(param1[1], 0, 0, rep(param1[2], nfeature))
-    outparam <- list(betainv = betainv, thetarel = thetarel,
-                     nfeature = nfeature, kernelname = kname,
-                     ARD = FALSE)
+    outparam <- list(betainv = betainv, thetarel = thetarel, nfeature = nfeature,
+                     kernelname = kname, ARD = FALSE)
   } else {
     cat("Running second stage optim (ARD)\n")
     stop("not finished yet.")
@@ -129,25 +130,24 @@ gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
     betainv_noard <- betainv
 
     flush.console()
-    #kname = "gaussiandotrel"
-    #
+    # kname = "gaussiandotrel"
+
     rel <- c(betainv, param1[1], rep(param1[2], nfeature))
-    #ll2=loglikerel2(rel)
-    #
+
     ans2 <- optim(rel, loglikerel2, grad_gauss_loglikerel2, method = "L-BFGS-B",
                   lower = rep(1e-6, length(rel)), upper = rep(Inf, length(rel)),
                   control = list(maxit = optim_ard_max, trace = optim_ard_trace,
                                  REPORT = optim_ard_report, fnscale = -1.0),
-                  ds2_train2mx = x, train_y = y)
+                  ds2_train2mx = x, train_y = y, ncpu = in_ncpu)
     #
-    cat("Second stage optim (RBF with ARD) convergence (0: success; 1: maxit reached) =", ans2$convergence, ", msg =", ans2$message, "\n")
+    cat("Second stage optim (RBF with ARD) convergence (0: success; 1: maxit reached)=", ans2$convergence, "msg=", ans2$message, "\n")
     flush.console()
 
     betainv <- ans2$par[1]
     thetarel <- c(ans2$par[2], 0, 0, ans2$par[3:length(ans2$par)])
     outparam <- list(betainv = betainv, thetarel = thetarel,
-                     nfeature = nfeature, kernelname = kname,
-                     ARD = TRUE, thetarel_noard = thetarel_noard,
+                     nfeature = nfeature, kernelname = kname, ARD = TRUE,
+                     thetarel_noard = thetarel_noard,
                      betainv_noard = betainv_noard)
 
   }
@@ -155,8 +155,9 @@ gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
 }
 
 
-#cluster data and return a list of row indces of each cluster.
-data_part <- function(x, partType = "kmeans", nclus = 10, iter.max = 100, msize = 13000) {
+# cluster data and return a list of row indces of each cluster.
+data_part <- function(x, partType="kmeans", nclus=10, iter.max = 100,
+                      msize = 13000) {
   #partType = "simple"
   #partType = "kmeans"
 
@@ -174,8 +175,7 @@ data_part <- function(x, partType = "kmeans", nclus = 10, iter.max = 100, msize 
 
     clusIndex <- km_ret1$cluster
     clusters <- 1:nclus
-    #obsClusters_old = lapply(clusters,function(y){which(y==clusIndex)})
-    obsClusters <- lapply(clusters, function(y){ which(y == clusIndex) })
+    obsClusters <- lapply(clusters, function(y){ which(y==clusIndex) })
 
     obsClusters2 <- list()
     lid <- 0
@@ -185,8 +185,7 @@ data_part <- function(x, partType = "kmeans", nclus = 10, iter.max = 100, msize 
         obsClusters2[[lid]] <- obsClusters[[ii]]
       } else {
         nc <- floor(length(obsClusters[[ii]]) / (msize / 2.1))
-        cind1 <- cut(sample(seq(1, length(obsClusters[[ii]]))), breaks = nc,
-                     labels = F)
+        cind1 <- cut(sample(seq(1, length(obsClusters[[ii]]))), breaks = nc, labels = F)
         for (j3 in 1:nc) {
           lid <- lid + 1
           obsClusters2[[lid]] <- obsClusters[[ii]][cind1 == j3]
@@ -209,7 +208,7 @@ data_part <- function(x, partType = "kmeans", nclus = 10, iter.max = 100, msize 
   return(obsClusters)
 }
 
-#method = c("solve", "cg_direct", "cg_ichol")
+# method = c("solve", "cg_direct", "cg_ichol")
 gpr_train <- function(train_x, train_y, kparam, method = "solve",
                       ig_tol = 0.01, in_ncpu = -1) {
   #now, construct the full matrix bigK
@@ -222,9 +221,7 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
   if(method != "cg_direct_lm") {
     cat("constructing bigK\n")
     flush.console()
-    t1 <- system.time(bigK <- tcrossprod_t(train_x, train_x, 1, debug1,
-                                           kparam$kernelname, kparam$thetarel,
-                                           param2, in_ncpu))
+    t1 <- system.time(bigK <- tcrossprod_t(train_x, train_x, 1, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
     cat("bigK consumed time:\n")
     print(t1)
     flush.console()
@@ -256,9 +253,9 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
 
   if(method == "cg_ichol") {
     cat("running CG with preconditioner\n")
-    xvec <- matrix(0, nrow = nrow(bigK), ncol = 1)
+    xvec <- matrix(0, nrow=nrow(bigK), ncol=1)
     #xvec = alpha2
-    rvec <- as.matrix(train_y, ncol = 1) - bigK %*% xvec
+    rvec <- as.matrix(train_y, ncol=1) - bigK %*% xvec
     zvec <- bigMinv %*% rvec
     pvec <- zvec
 
@@ -271,7 +268,7 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
       xvec2 <- xvec + ak * pvec
       rvec2 <- rvec - ak * bigK %*% pvec
       rvec2_norm <- sqrt(mean(rvec2 * rvec2))
-      cat("rvec2_norm =", rvec2_norm, "\n")
+      cat("rvec2_norm = ", rvec2_norm, "\n")
 
       zvec2 <- bigMinv %*% rvec2
       bk <- (t(zvec2) %*% rvec2) / (t(zvec) %*% rvec)
@@ -309,7 +306,7 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
       xvec2 <- xvec + ak * pvec
       rvec2 <- rvec - ak * bigK %*% pvec
       rvec2_norm <- sqrt(mean(rvec2 * rvec2))
-      cat("rvec2_norm =", rvec2_norm, "\n")
+      cat("rvec2_norm = ", rvec2_norm, "\n")
 
       zvec2 <- rvec2
       bk <- (t(zvec2) %*% rvec2) / (t(zvec) %*% rvec)
@@ -360,29 +357,26 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
       flush.console()
 
       # bigK %*% pvec
-      bigKpvec <- as.matrix(kernelmdot(train_x, train_x, pvec, kparam$betainv,
-                                       debug1, kparam$kernelname,
-                                       kparam$thetarel, param2),
-                            ncol=1)
+      bigKpvec <- as.matrix(kernelmdot(train_x, train_x, pvec, kparam$betainv, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu), ncol=1)
       ak <- sum(rvec * zvec) / (t(pvec) %*% bigKpvec)
       ak <- drop(ak)
       xvec2 <- xvec + ak * pvec
       # bigK %*% pvec
       rvec2 <- rvec - ak * bigKpvec
       rvec2_norm <- sqrt(mean(rvec2 * rvec2))
-      cat("rvec2_norm =", rvec2_norm, "\n")
+      cat("rvec2_norm = ", rvec2_norm, "\n")
 
       zvec2 <- rvec2
       bk <- (t(zvec2) %*% rvec2) / (t(zvec) %*% rvec)
       bk <- drop(bk)
       pvec2 <- zvec2 + bk * pvec
 
-      # === iterate
+      #=== iterate
       zvec <- zvec2
       rvec <- rvec2
       pvec <- pvec2
       xvec <- xvec2
-      # if(kind %% 10 == 0) print(lsos())
+      #if(kind %% 10 == 0) print(lsos())
 
       if(rvec2_norm < ig_tol) {
         cat("converged!\n")
@@ -401,14 +395,11 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
   return(list(alpha = xvec, kparam = kparam))
 }
 
-gpr_predict <- function(testmx, trainmx, gprmodel, in_ncpu = -1) {
+gpr_predict <- function(testmx, gprmodel, in_ncpu = -1) {
   debug1 <- 0
   param2 <- 1
 
-  t2 <- system.time(Ksmall2 <- tcrossprod_t(testmx, trainmx, 0, debug1,
-                                            gprmodel$kparam$kernelname,
-                                            gprmodel$kparam$thetarel, param2,
-                                            in_ncpu))
+  t2 <- system.time(Ksmall2 <- tcrossprod_t(testmx, gprmodel$trainmx, 0, debug1, gprmodel$kparam$kernelname, gprmodel$kparam$thetarel, param2, ncpu))
   cat("Ksmall2 consumed time:\n")
   print(t2)
 
@@ -421,17 +412,15 @@ gpr_train_sr <- function(train_x, train_y, kparam, csize, in_ncpu) {
   cat("gpr_sr trainer\n")
 
   obslist <- c(1:csize)
-  cat("gpr_train_sr: subset size =", csize, "\n")
-  cat("training data size =", nrow(train_x), "\n")
+  cat("gpr_train_sr: subset size=", csize, "\n")
+  cat("training data size=", nrow(train_x), "\n")
   flush.console()
 
 
   subtrain <- train_x[obslist, ]
   debug1 <- 0
   param2 <- 1
-  t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, 1, debug1,
-                                         kparam$kernelname, kparam$thetarel,
-                                         param2, in_ncpu))
+  t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, 1, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
   cat("out1 consumed time:\n")
   print(t1)
 
@@ -456,9 +445,9 @@ gpr_train_sr <- function(train_x, train_y, kparam, csize, in_ncpu) {
 
 
 # =======================
-local_gpr_train <- function(train_x, train_y, kparam, obsClusters, in_ncpu) {
+local_gpr_train <- function(train_x, train_y, kparam, obsClusters, ncpu = -1) {
   nclus <- length(obsClusters)
-  # cc <- 0
+  # cc=0
   alphaList <- list()
   length(alphaList) <- nclus
   CninvList <- list()
@@ -469,7 +458,7 @@ local_gpr_train <- function(train_x, train_y, kparam, obsClusters, in_ncpu) {
     # cc = cc+1
     obslist <- obsClusters[[ag]]
     csize <- length(obslist)
-    cat("  group size =", csize, "\n")
+    cat("  group size=", csize, "\n")
     if(csize > 1) {
       flush.console()
 
@@ -477,9 +466,7 @@ local_gpr_train <- function(train_x, train_y, kparam, obsClusters, in_ncpu) {
       ifsym <- 1
       debug1 <- 0
       param2 <- 1
-      t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, ifsym, debug1,
-                                             kparam$kernelname, kparam$thetarel,
-                                             param2, in_ncpu))
+      t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, ifsym, debug1, kparam$kernelname, kparam$thetarel, param2, ncpu))###ncpu
       cat("out1 consumed time:\n")
       print(t1)
       Cn <- out1 + kparam$betainv * diag(nrow(out1))
@@ -491,12 +478,11 @@ local_gpr_train <- function(train_x, train_y, kparam, obsClusters, in_ncpu) {
       alphaList[[ag]] <- NULL
     }
   }
-  return(list(alphaList = alphaList, kparam = kparam, obsClusters = obsClusters,
-              nclus = nclus, CninvList = CninvList))
+  return(list(alphaList = alphaList, kparam = kparam, obsClusters = obsClusters, nclus = nclus, CninvList = CninvList))
 }
 
 
-local_gpr_predict <- function (test_x, train_x, lgpr_model) {
+local_gpr_predict <- function (test_x, lgpr_model, in_ncpu = -1) {
 
   if(nrow(test_x) > 3000) {
     nclus <- nrow(test_x) / 2000
@@ -512,7 +498,7 @@ local_gpr_predict <- function (test_x, train_x, lgpr_model) {
     lc <- lc + 1
     ntest <- length(testobs)
     thistest <- test_x[testobs,]
-    # todo... gen test data...
+    #todo... gen test data...
 
     obsClusters <- lgpr_model$obsClusters
     nclus <- lgpr_model$nclus
@@ -527,12 +513,9 @@ local_gpr_predict <- function (test_x, train_x, lgpr_model) {
       obslist <- obsClusters[[ag]]
 
       if(length(obslist) > 1) {
-        t2 <- system.time(Ksmall2 <- tcrossprod_t(thistest, train_x[obslist,],
-                                                  0, debug1,
-                                                  lgpr_model$kparam$kernelname,
-                                                  lgpr_model$kparam$thetarel, param2))
-        # cat("Ksmall2 consumed time:\n")
-        # print(t2)
+        t2 <- system.time(Ksmall2 <- tcrossprod_t(thistest, lgpr_model$train_x[obslist,], 0, debug1, lgpr_model$kparam$kernelname, lgpr_model$kparam$thetarel, param2, in_ncpu))
+        #cat("Ksmall2 consumed time:\n")
+        #print(t2)
         kttList[[ag]] <- Ksmall2
       } else {
         Ksmall2 <- matrix(-Inf, nrow = ntest, ncol = length(obslist))
@@ -540,7 +523,7 @@ local_gpr_predict <- function (test_x, train_x, lgpr_model) {
       }
     }
 
-    # make prediction
+    #make prediction
     predAll <- list()
     for (ag in 1:nclus) {
       cat(lc, "of", length(clus1), "local_gpr_predict: predict local: processing group", ag, "\n")
@@ -562,7 +545,7 @@ local_gpr_predict <- function (test_x, train_x, lgpr_model) {
 
     clusSel <- apply(kttcomp, 1, which.max)
 
-    predBC <- matrix(NA, nrow = ntest, ncol = 1)
+    predBC <- matrix(NA, nrow=ntest, ncol=1)
     for (ii in 1:ntest) {
       predBC[ii] <- predAll[[clusSel[ii]]][ii]
     }
@@ -572,9 +555,7 @@ local_gpr_predict <- function (test_x, train_x, lgpr_model) {
       #single point bcm
       predSdList <- list()
       length(predSdList) <- nclus
-      t2 <- system.time(kc <- tcrossprod_t(test_x, test_x, 1, debug1,
-                                           lgpr_model$kparam$kernelname,
-                                           lgpr_model$kparam$thetarel, param2))
+      t2 <- system.time(kc <- tcrossprod_t(test_x, test_x, 1, debug1, lgpr_model$kparam$kernelname, lgpr_model$kparam$thetarel, param2))
       qvar <- 0
       bcmPred <- 0
       for (ag in 1:nclus) {
@@ -588,7 +569,7 @@ local_gpr_predict <- function (test_x, train_x, lgpr_model) {
         bcmPred <- bcmPred + predAll[[ag]] / var1
       }
 
-      qvar <- 1 / (qvar - (nclus - 1) / diag(kc))
+      qvar <- 1 / (qvar - (nclus-1) / diag(kc))
       bcmPred <- bcmPred * qvar
     } else {
       bcmPred <- NULL
@@ -603,22 +584,22 @@ local_gpr_predict <- function (test_x, train_x, lgpr_model) {
 
 # =========================
 
-loglike_gauss_clus <- function(theta, train_x_list, train_y_list) {
+loglike_gauss_clus <- function(theta, train_x_list, train_y_list, ncpu) {
   listn <- length(train_x_list)
 
   sum1 <- 0.0
   for (cc in 1:listn) {
-    sum1 <- sum1 + loglike_gauss(theta, train_x_list[[cc]], train_y_list[[cc]])
+    sum1 <- sum1 + loglike_gauss(theta, train_x_list[[cc]], train_y_list[[cc]], ncpu)
   }
   return(sum1)
 }
 
-grad_gauss_loglike_clus <- function(theta, train_x_list, train_y_list) {
+grad_gauss_loglike_clus <- function(theta, train_x_list, train_y_list, ncpu) {
   listn <- length(train_x_list)
 
   sum1 <- 0.0
   for(cc in 1:listn) {
-    sum1 <- sum1 + grad_gauss_loglike(theta, train_x_list[[cc]], train_y_list[[cc]])
+    sum1 <- sum1 + grad_gauss_loglike(theta, train_x_list[[cc]], train_y_list[[cc]], ncpu)
   }
   return(sum1)
 }
@@ -626,7 +607,7 @@ grad_gauss_loglike_clus <- function(theta, train_x_list, train_y_list) {
 
 # gaussian kernels
 # theta [betainv theta1]
-loglike_gauss <- function(theta, ds2_train2mx, train_y) {
+loglike_gauss <- function(theta, ds2_train2mx, train_y, ncpu = -1) {
   kname = "gaussiandot"
 
   ifsym <- 1
@@ -635,7 +616,7 @@ loglike_gauss <- function(theta, ds2_train2mx, train_y) {
   betainv <- theta[1]
   param2 <- 1
 
-  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2)
+  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2, ncpu)
   # lambda = 1/100000
   out1 <- out1 + betainv * diag(nrow(out1))
   result <- try(out1inv <- solve(out1), silent = TRUE)
@@ -647,12 +628,12 @@ loglike_gauss <- function(theta, ds2_train2mx, train_y) {
   ip1 <- - 0.5 * t(train_y) %*% out1inv %*% train_y
   ret1 <- logdet1 +ip1
   flush.console()
-  # cat("   loglike: theta =", theta1, "betainv =",betainv, "ret1 =", ret1, "logdet1 =", logdet1, "ip1 =", ip1, "\n")
+  # cat("   loglike: theta=", theta1, "betainv=",betainv, "ret1=", ret1, "logdet1=", logdet1, "ip1=", ip1, "\n")
   return(ret1)
 }
 
 
-grad_gauss_loglike <- function(theta, ds2_train2mx, train_y) {
+grad_gauss_loglike <- function(theta, ds2_train2mx, train_y, ncpu = -1) {
   debug1 <- 0
   ifsym <- 1
   kname <- "gaussiandot"
@@ -661,7 +642,7 @@ grad_gauss_loglike <- function(theta, ds2_train2mx, train_y) {
   betainv <- theta[1]
   param2 <- 1
 
-  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2)
+  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2, ncpu)
   # lambda = 1/100000
   out1 <- out1 + betainv * diag(nrow(out1))
   result <- try(out1inv <- solve(out1), silent = TRUE)
@@ -671,11 +652,11 @@ grad_gauss_loglike <- function(theta, ds2_train2mx, train_y) {
 
   # compute grad_theta0
   tmp1 <- c(1, theta1[2], 0, 0)
-  cn_ptheta0 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, tmp1, param2)
+  cn_ptheta0 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, tmp1, param2, ncpu)
 
   tmpkname <- "gaussiandotgradt1"
   tmp1 <- c(theta1[1], theta1[2], 0,0)
-  cn_ptheta1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, tmpkname, tmp1, param2)
+  cn_ptheta1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, tmpkname, tmp1, param2, ncpu)
 
   grad0 <- -0.5 * sum(diag(out1inv %*% cn_ptheta0))  + 0.5 * t(train_y) %*% out1inv %*% cn_ptheta0 %*% out1inv %*% train_y
   grad1 <- -0.5 * sum(diag(out1inv %*% cn_ptheta1))  + 0.5 * t(train_y) %*% out1inv %*% cn_ptheta1 %*% out1inv %*% train_y
@@ -687,7 +668,7 @@ grad_gauss_loglike <- function(theta, ds2_train2mx, train_y) {
 
 # marginal log-likelihood using gaussian kernel with individual relevance parameters for input features
 # theta = [betainv rel]
-loglikerel2 <- function(theta, ds2_train2mx, train_y) {
+loglikerel2 <- function(theta, ds2_train2mx, train_y, ncpu) {
   debug1 <- 0
   ifsym <- 1
   param2 <- 1
@@ -698,7 +679,7 @@ loglikerel2 <- function(theta, ds2_train2mx, train_y) {
   theta1 <- c(tmp1[2], 0, 0, tmp1[3:length(tmp1)])
   betainv <- tmp1[1]
 
-  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2)
+  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2, ncpu)
   out1 <- out1 + betainv * diag(nrow(out1))
   # lambda = 1/100000
   result <- try(out1inv <- solve(out1), silent = TRUE)
@@ -711,13 +692,13 @@ loglikerel2 <- function(theta, ds2_train2mx, train_y) {
   ip1 <- - 0.5 * t(train_y) %*% out1inv %*% train_y
   ret1 <- logdet1 + ip1
   flush.console()
-  # cat("   loglike: theta =", theta1[1:3], "betainv =",betainv, "ret1 =", ret1, "logdet1 =", logdet1, "ip1 =", ip1, "\n")
-  # cat("         theta[4:] =", theta1[4:length(theta1)], "\n")
+  # cat("   loglike: theta=", theta1[1:3], "betainv=",betainv, "ret1=", ret1, "logdet1=", logdet1, "ip1=", ip1, "\n")
+  # cat("         theta[4:]=", theta1[4:length(theta1)], "\n")
   return(ret1)
 }
 
 
-grad_gauss_loglikerel2 <- function(theta, ds2_train2mx, train_y) {
+grad_gauss_loglikerel2 <- function(theta, ds2_train2mx, train_y, ncpu) {
   debug1 <- 0
   kname <- "gaussiandotrel"
   ifsym <- 1
@@ -726,7 +707,7 @@ grad_gauss_loglikerel2 <- function(theta, ds2_train2mx, train_y) {
   theta1 <- c(theta[2], 0, 0, theta[3:length(theta)])
   betainv <- theta[1]
 
-  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2)
+  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2, ncpu)
   # lambda = 1/100000
   out1 <- out1 + betainv * diag(nrow(out1))
   result <- try(out1inv <- solve(out1), silent = TRUE)
@@ -738,7 +719,7 @@ grad_gauss_loglikerel2 <- function(theta, ds2_train2mx, train_y) {
 
   # compute grad_theta0
   tmp1 <- c(1, 0, 0, theta1[4:length(theta1)])
-  cn_ptheta0 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, tmp1, param2)
+  cn_ptheta0 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, tmp1, param2, ncpu)
   grad0 <- -0.5 * sum(diag(out1inv %*% cn_ptheta0)) + 0.5 * t(train_y) %*% out1inv %*% cn_ptheta0 %*% out1inv %*% train_y
 
   tmpkname <- "kgaussiandotrelgradt1"
@@ -750,100 +731,11 @@ grad_gauss_loglikerel2 <- function(theta, ds2_train2mx, train_y) {
   for (param2 in 1:nx) {
     #param2 is the rel parameter index, starting from 1
     param2 <- as.numeric(param2)
-    cn_ptheta1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, tmpkname, tmp1, param2)
+    cn_ptheta1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, tmpkname, tmp1, param2, ncpu)
 
     rel_tmp <-  -0.5 * sum(diag(out1inv %*% cn_ptheta1)) + mtmp1 %*% cn_ptheta1 %*% mtmp2
     relall[param2] <- rel_tmp
   }
   return(c(gradbetainv, grad0, relall))
 }
-
-
-# gaussian dot kernels
-loglike <- function(theta) {
-  kname <- "gaussiandot"
-  debug1 <- 0
-
-  theta1 <- c(theta[1:2], 1, theta[3])
-  betainv <- theta[4]
-  param2 <- 1
-
-  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2)
-  # lambda = 1/100000
-  out1 <- out1 + betainv * diag(nrow(out1))
-  result <- try(out1inv <- solve(out1), silent = TRUE)
-  if (class(result) == "try-error") {
-    return(NaN)
-  }
-
-  logdet1 <- -0.5 * determinant(out1, logarithm = TRUE)$modulus[1]
-  ip1 <- - 0.5 * t(ds2_train2$y) %*% out1inv %*% ds2_train2$y
-  ret1 <- logdet1 + ip1
-  flush.console()
-  cat("   loglike: theta=", theta1, "betainv=",betainv, "ret1=", ret1, "logdet1=", logdet1, "ip1=", ip1, "\n")
-  return(-1 * ret1)
-}
-
-
-
-# log likelihood using gaussian dot kernel with  relevance parameters for individual input features
-loglikerel <- function(theta) {
-  kname <- "gaussiandotrel"
-  debug1 <- 0
-
-  rel <- exp(theta)
-  # loglikerel_param1
-  theta1 <- c(loglikerel_param1[1], loglikerel_param1[3], loglikerel_param1[4], rel)
-
-  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2)
-  out1 <- out1 + loglikerel_betainv * diag(nrow(out1))
-  # lambda = 1/100000
-  result <- try(out1inv <- solve(out1), silent=TRUE)
-  if (class(result) == "try-error") {
-    return(NaN)
-  }
-
-  logdet1 <- -0.5 * determinant(out1, logarithm = TRUE)$modulus[1]
-  ip1 <- - 0.5 * t(ds2_train2$y) %*% out1inv %*% ds2_train2$y
-  ret1 <- logdet1 +ip1
-  flush.console()
-  cat("   loglike: theta=", theta1[1:3], "betainv=",betainv, "ret1=", ret1, "logdet1=", logdet1, "ip1=", ip1, "\n")
-  cat("         theta[4:]=", theta1[4:length(theta1)], "\n")
-  return(-1 * ret1)
-}
-
-grad_loglike <- function(theta) {
-  debug1 <- 0
-  kname <- "gaussiandot"
-
-  theta1 <- c(theta[1:2], 1, theta[3])
-  betainv <- theta[4]
-
-  out1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, theta1, param2)
-  # lambda = 1/100000
-  out1 <- out1 + betainv * diag(nrow(out1))
-  result <- try(out1inv <- solve(out1), silent=TRUE)
-  if (class(result) == "try-error") {
-    return(NaN)
-  }
-
-  # compute grad_theta0
-  tmp1 <- c(1, theta1[1], 0, 0)
-  cn_ptheta0 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, tmp1, param2)
-
-  tmpkname <- "gaussiandotgradt1"
-  tmp1 <- c(theta[1], theta[2], 0,0)
-  cn_ptheta1 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, tmpkname, tmp1, param2)
-
-  tmp1 <- c(0, 0, 0, 1)
-  cn_ptheta3 <- tcrossprod_t(ds2_train2mx, ds2_train2mx, ifsym, debug1, kname, tmp1, param2)
-
-  grad0 <- -0.5 * sum(diag(out1inv %*% cn_ptheta0)) + 0.5 * t(ds2_train2$y) %*% out1inv %*% cn_ptheta0 %*% out1inv %*% ds2_train2$y
-  grad1 <- -0.5 * sum(diag(out1inv %*% cn_ptheta1)) + 0.5 * t(ds2_train2$y) %*% out1inv %*% cn_ptheta1 %*% out1inv %*% ds2_train2$y
-  grad3 <- -0.5 * sum(diag(out1inv %*% cn_ptheta3)) + 0.5 * t(ds2_train2$y) %*% out1inv %*% cn_ptheta3 %*% out1inv %*% ds2_train2$y
-  gradbetainv <- -0.5 * sum(diag(out1inv)) + 0.5 * t(ds2_train2$y) %*% out1inv %*% out1inv %*% ds2_train2$y
-
-  return(-1* c(grad0, grad1, grad3, gradbetainv))
-}
-
 
