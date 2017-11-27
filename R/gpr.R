@@ -399,7 +399,7 @@ gpr_predict <- function(testmx, gprmodel, in_ncpu = -1) {
   debug1 <- 0
   param2 <- 1
 
-  t2 <- system.time(Ksmall2 <- tcrossprod_t(testmx, gprmodel$trainmx, 0, debug1, gprmodel$kparam$kernelname, gprmodel$kparam$thetarel, param2, ncpu))
+  t2 <- system.time(Ksmall2 <- tcrossprod_t(testmx, gprmodel$train_x, 0, debug1, gprmodel$kparam$kernelname, gprmodel$kparam$thetarel, param2, in_ncpu))
   cat("Ksmall2 consumed time:\n")
   print(t2)
 

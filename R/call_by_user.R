@@ -122,7 +122,7 @@ gpr_fit <- function(testmx, gprmodel, ncpu = -1) {
   } else if (gprmodel$pred_method == "local_gpr") {
     cat("doing prediction\n")
     flush.console()
-    predl1 = local_gpr_predict(testmx, gprmodel, ncpu)
+    pred1 = local_gpr_predict(testmx, gprmodel, ncpu)
 
   } else if (gprmodel$pred_method == "sr") {
     cat("doing prediction\n")
