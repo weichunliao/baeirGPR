@@ -39,15 +39,16 @@ traintraintrain <- function(train_x, train_y, pred_method = "sr",
                             kname = "gaussiandotrel", ktheta = NULL,
                             kbetainv = NULL, ncpu = -1, srsize = NULL,
                             tsize = NULL, clus_size = NULL) {
-  if (is.null(tsize)) {
-    cat("the tsize is not provided.")
-    return (-1)
-  }
-
-  train_x2 <- train_x[1:tsize,]
-  train_y2 <- train_y[1:tsize,]
 
   if(tune_param) {
+    if (is.null(tsize)) {
+      cat("the tsize is not provided.")
+      return (-1)
+    }
+
+    train_x2 <- train_x[1:tsize,]
+    train_y2 <- train_y[1:tsize,]
+
     param1 <- c(10, 2, 0.5)
     kparam <- gpr_tune(train_x2, train_y2, kernelname = "rbf",
                        init_param = param1, optim_report = 1,
