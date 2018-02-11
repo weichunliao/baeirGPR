@@ -38,24 +38,6 @@ traintraintrain <- function(train_x, train_y, pred_method = "sr",
                             kname = "gaussiandotrel", ktheta = NULL,
                             kbetainv = NULL, ncpu = -1, srsize = NULL,
                             clus_size = NULL) {
-  # if(tune_param) {
-  #   if (is.null(tsize)) {
-  #     cat("the tsize is not provided.")
-  #     return (-1)
-  #   }
-  #
-  #   train_x2 <- train_x[1:tsize,]
-  #   train_y2 <- train_y[1:tsize,]
-  #
-  #   param1 <- c(10, 2, 0.5)
-  #   kparam <- gpr_tune(train_x2, train_y2, kernelname = "rbf",
-  #                      init_param = param1, optim_report = 1,
-  #                      optim_ard_report = 1, ARD = ARD, optim_ard_max = 10,
-  #                      in_ncpu = ncpu)
-  # } else {
-  #   cat("set init value for kparam\n")
-  #   kparam <- list(betainv = kbetainv, thetarel = ktheta, kernelname = kname)
-  # }
   if(is.null(kbetainv)) {
     cat("do not have kbetainv\n")
     return(-1)
@@ -86,12 +68,12 @@ traintraintrain <- function(train_x, train_y, pred_method = "sr",
     if(max(csize) > 15000) stop("max(csize) too big!\n")
 
     gpr_model1 <- local_gpr_train(ds2_trainmx, ds2_train_y, kparam, clus1, ncpu)
-    # gpr_model1$train_x <- train_x
+    gpr_model1$train_x <- train_x
   } else if (pred_method == "sr") {
     # cat("srsize, ncpu:", srsize, ncpu)
     gpr_model1 <- gpr_train_sr(train_x = train_x, train_y = train_y, kparam = kparam,
                               csize = srsize, in_ncpu = ncpu)
-    # gpr_model1$train_x <- train_x[gpr_model1$oblist,]
+    # gpr_model1$train_x <- train_x[gpr_model1$obslist,]
   }
   gpr_model1$pred_method <- pred_method
   return (gpr_model1)
@@ -111,15 +93,15 @@ traintraintrain <- function(train_x, train_y, pred_method = "sr",
 #' @return the prediction of testing dataset.
 #'
 #' @export
-gpr_fit <- function(testmx, gprmodel, ncpu = -1) {
+gpr_fit <- function(testmx, trainmx, gprmodel, ncpu = -1) {
   if(gprmodel$pred_method == "cg_direct_lm") {
     cat("doing prediction\n")
     flush.console()
-    pred1 <- gpr_predict(testmx, gprmodel, ncpu)
+    pred1 <- gpr_predict(testmx, trainmx, gprmodel, ncpu)
   } else if (gprmodel$pred_method == "usebigK") {
     cat("doing prediction\n")
     flush.console()
-    pred1 <- gpr_predict(testmx, gprmodel, ncpu)
+    pred1 <- gpr_predict(testmx, trainmx, gprmodel, ncpu)
   } else if (gprmodel$pred_method == "local_gpr") {
     cat("doing prediction\n")
     flush.console()
@@ -128,75 +110,8 @@ gpr_fit <- function(testmx, gprmodel, ncpu = -1) {
   } else if (gprmodel$pred_method == "sr") {
     cat("doing prediction\n")
     flush.console()
-    pred1 <- gpr_predict(testmx, gprmodel, ncpu)
+    pred1 <- gpr_predict(testmx, trainmx, gprmodel, ncpu)
   }
   return (pred1)
 }
 
-train_gbm <- function(train_x, train_y, pred_method = "1",
-                      nmodel = 2, batchsize = 100, lr = 0.1,
-                      kname = "gaussiandotrel", ktheta = NULL,
-                      kbetainv = NULL, ncpu = -1) {
-  train_x = ds2_trainmx
-  train_y = ds2_train_y
-  test_x = ds2_testmx
-  test_y = ds2_test_y
-  kname = "gaussiandotrel"
-  ktheta = kern_param1$thetarel_noard
-  kbetainv = kern_param1$betainv_noard
-  ncpu = -1
-  nmodel = 1
-  batchsize = 100
-  lr = 0.1
-
-  n_data <- nrow(train_x)
-  all_rmse <- rep(NA, nmodel)
-  adj_y <- ds2_train_y
-  adj_test_y <- ds2_test_y
-
-  for (ith_model in 1:nmodel) {
-    cat("Now, running for iteration", ith_model, "\n")
-    flush.console()
-
-    if(ith_model == 1) {
-      cat("first model")
-      model1 <- traintraintrain(ds2_trainmx, ds2_train_y, pred_method = "sr",
-                      kname = "gaussiandotrel", ktheta = kern_param1$thetarel_noard, kbetainv = kern_param1$betainv_noard,
-                      ncpu = -1, srsize = 50)
-      return(model1)
-    } else {
-      cat("QQQQQQQ")
-      adj_y = adj_y - pred_trainy * lrate
-      adj_test_y = adj_test_y - pred1 * lrate
-      #trainind=sample(N, batchsize)
-      #tmp1=(1:N)[-trainind]
-      #tmp2=sample(tmp1, srsize-batchsize)
-      #srfullind=c(trainind, tmp2)
-      srfullind = sample(N, srsize)
-      trainind = srfullind[1:batchsize]
-    }
-    # kern_param2 = list(betainv = kern_param1$betainv_noard, thetarel = kern_param1$thetarel_noard, kernelname = kern_param1$kernelname)
-    # result = tryCatch({
-    #   gpr_model2 = traintraintrain(ds2_trainmx, adj_y, pred_method = "sr",
-    #                                kname = "gaussiandotrel", ktheta = kern_param1$thetarel, kbetainv = kern_param1$betainv,
-    #                                ncpu = -1, srsize = 50)
-    #   pred1 = gpr_predict2(ds2_testmx, ds2_trainmx[trainind,], gpr_model2)
-    #   rmse2 = sqrt(mean((adj_test_y - pred1*lrate)^2))
-    #   all_rmse[iterid] = rmse2
-    #   cat(" (GPR noard) rmse; ", "iterid=", iterid, "->", rmse2, "\n")
-    #   cat("Current best rmse=", min(all_rmse[1:iterid]), "at", which.min(all_rmse[1:iterid]), "\n")
-    #   flush.console()
-    #   if(iterid > 1) {
-    #     plot(all_rmse[1:iterid], type='l')
-    #   }
-    #   cat("doing in-sample predicting...\n")
-    #   pred_trainy = gpr_predict2(ds2_trainmx, ds2_trainmx[trainind,], gpr_model2)
-    #   flush.console()
-    # }, error = function(e) {
-    #   cat("This iteration id=", iterid, "\n")
-    #   cat("Error encountered:", paste("Err=",e), "\n")
-    #   cat("Move on to the next batch...\n")
-    #   #next
-    # })
-  }
-}
