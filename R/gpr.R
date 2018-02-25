@@ -186,15 +186,15 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
   debug1 <- 0
   param2 <- 1
   nobs <- nrow(train_x)
-  cat("GPR training with", nobs, "data points\n")
+  # cat("GPR training with", nobs, "data points\n")
   flush.console()
 
   if(method != "cg_direct_lm") {
-    cat("constructing bigK\n")
+    # cat("constructing bigK\n")
     flush.console()
     t1 <- system.time(bigK <- tcrossprod_t(train_x, train_x, 1, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
-    cat("bigK consumed time:\n")
-    print(t1)
+    # cat("bigK consumed time:\n")
+    # print(t1)
     flush.console()
     diagAddConst(bigK, kparam$betainv, 1)
   }
@@ -373,8 +373,8 @@ gpr_predict <- function(testmx, trainmx, gprmodel, in_ncpu = -1) {
   train_x <- trainmx[gprmodel$obslist,]
 
   t2 <- system.time(Ksmall2 <- tcrossprod_t(testmx, train_x, 0, debug1, gprmodel$kparam$kernelname, gprmodel$kparam$thetarel, param2, in_ncpu))
-  cat("Ksmall2 consumed time:\n")
-  print(t2)
+  # cat("Ksmall2 consumed time:\n")
+  # print(t2)
 
   pred1 <- Ksmall2 %*% gprmodel$alpha
   return(pred1)
