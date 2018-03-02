@@ -448,9 +448,9 @@ SEXP diagAddConst (Rcpp::NumericMatrix x, double param1, int ifdebug) {
   size_t xnrow = x.nrow();
   size_t xncol = x.ncol();
 
-  // if (debug) {
-  //   Rprintf("The dimension of x: %d x %d\n", xnrow, xncol);
-  // }
+  if (debug) {
+    Rprintf("The dimension of x: %d x %d\n", xnrow, xncol);
+  }
 
   for(int ri=0; ri<xnrow; ri++) {
     x(ri, ri) = x(ri, ri) + param1;

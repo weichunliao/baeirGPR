@@ -97,86 +97,87 @@ gpr_tune <- function (x, y, kernelname = "rbf", ARD = TRUE,
 }
 
 # tuning using local models
-gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
-                        init_param = c(10, 2, 0.5), clusters = NULL,
-                        optim_rbf_max = 100, optim_trace = 1,
-                        optim_report = 5, optim_ard_max = 20,
-                        optim_ard_trace = 1, optim_ard_report = 5,
-                        ncput = -1, in_ncpu = -1) {
-
-  if(kernelname == "rbf") {
-    kname <- "gaussiandotrel"
-  } else {
-    stop("gpr_turn: Unknown kernelname", kernelname, "\n")
-  }
-  cat("gpr_tune_lm: optimizing marginal log-likelihood\n")
-
-  param1 <- init_param
-  cat("    Using initial value [betainv theta0 theta1]:", param1, "\n")
-  flush.console()
-  nfeature <- ncol(x)
-
-  clus_x <- list()
-  clus_y <- list()
-  cc <- 0
-  for(alist in clusters) {
-    cc <- cc + 1
-    clus_x[[cc]] <- x[alist,]
-    clus_y[[cc]] <- y[alist,]
-  }
-
-
-  ans1 <- optim(param1, loglike_gauss_clus, grad_gauss_loglike_clus,
-                method = "L-BFGS-B", lower = c(1e-6, 1e-6, 1e-6),
-                upper = c(Inf, Inf, Inf), control = list(maxit = optim_rbf_max,
-                                                         trace = optim_trace,
-                                                         REPORT = optim_report,
-                                                         fnscale = -1.0),
-                train_x_list = clus_x, train_y_list = clus_y, ncpu = in_ncpu)
-  param1 <- c((ans1$par)[2:3], 0, 0)
-  betainv <- (ans1$par)[1]
-
-  cat("Optimal kernel parameter [theta0 theta1]=", param1[1:2], "\n")
-  cat("Optimal kernel parameter betainv=", betainv, "\n")
-
-  cat("First stage optim (rbf, no ARD) convergence (0: success; 1: maxit reached)=", ans1$convergence, "msg=", ans1$message, "\n")
-  flush.console()
-
-  if(ARD == FALSE) {
-    thetarel <- c(param1[1], 0, 0, rep(param1[2], nfeature))
-    outparam <- list(betainv = betainv, thetarel = thetarel, nfeature = nfeature,
-                     kernelname = kname, ARD = FALSE)
-  } else {
-    cat("Running second stage optim (ARD)\n")
-    stop("not finished yet.")
-
-    thetarel_noard <- c(param1[1], 0, 0, rep(param1[2], nfeature))
-    betainv_noard <- betainv
-
-    flush.console()
-    # kname = "gaussiandotrel"
-
-    rel <- c(betainv, param1[1], rep(param1[2], nfeature))
-
-    ans2 <- optim(rel, loglikerel2, grad_gauss_loglikerel2, method = "L-BFGS-B",
-                  lower = rep(1e-6, length(rel)), upper = rep(Inf, length(rel)),
-                  control = list(maxit = optim_ard_max, trace = optim_ard_trace,
-                                 REPORT = optim_ard_report, fnscale = -1.0),
-                  ds2_train2mx = x, train_y = y, ncpu = in_ncpu)
-    #
-    cat("Second stage optim (RBF with ARD) convergence (0: success; 1: maxit reached)=", ans2$convergence, "msg=", ans2$message, "\n")
-    flush.console()
-
-    betainv <- ans2$par[1]
-    thetarel <- c(ans2$par[2], 0, 0, ans2$par[3:length(ans2$par)])
-    outparam <- list(betainv = betainv, thetarel = thetarel,
-                     nfeature = nfeature, kernelname = kname, ARD = TRUE,
-                     thetarel_noard = thetarel_noard,
-                     betainv_noard = betainv_noard)
-
-  }
-  return(outparam)
-}
+# gpr_tune_lm <- function(x, y, kernelname = "rbf", ARD = TRUE,
+#                         init_param = c(10, 2, 0.5), clusters = NULL,
+#                         optim_rbf_max = 100, optim_trace = 1,
+#                         optim_report = 5, optim_ard_max = 20,
+#                         optim_ard_trace = 1, optim_ard_report = 5,
+#                         ncput = -1, in_ncpu = -1) {
+#
+#   if(kernelname == "rbf") {
+#     kname <- "gaussiandotrel"
+#   } else {
+#     stop("gpr_turn: Unknown kernelname", kernelname, "\n")
+#   }
+#   cat("gpr_tune_lm: optimizing marginal log-likelihood\n")
+#
+#   param1 <- init_param
+#   cat("    Using initial value [betainv theta0 theta1]:", param1, "\n")
+#   flush.console()
+#   nfeature <- ncol(x)
+#
+#   clus_x <- list()
+#   clus_y <- list()
+#   cc <- 0
+#   for(alist in clusters) {
+#     cc <- cc + 1
+#     clus_x[[cc]] <- x[alist,]
+#     clus_y[[cc]] <- y[alist,]
+#   }
+#
+#
+#   ans1 <- optim(param1, loglike_gauss_clus, grad_gauss_loglike_clus,
+#                 method = "L-BFGS-B", lower = c(1e-6, 1e-6, 1e-6),
+#                 upper = c(Inf, Inf, Inf), control = list(maxit = optim_rbf_max,
+#                                                          trace = optim_trace,
+#                                                          REPORT = optim_report,
+#                                                          fnscale = -1.0),
+#                 train_x_list = clus_x, train_y_list = clus_y, ncpu = in_ncpu)
+#   param1 <- c((ans1$par)[2:3], 0, 0)
+#   betainv <- (ans1$par)[1]
+#
+#   cat("Optimal kernel parameter [theta0 theta1]=", param1[1:2], "\n")
+#   cat("Optimal kernel parameter betainv=", betainv, "\n")
+#
+#   cat("First stage optim (rbf, no ARD) convergence (0: success; 1: maxit reached)=", ans1$convergence, "msg=", ans1$message, "\n")
+#   flush.console()
+#
+#   if(ARD == FALSE) {
+#     thetarel <- c(param1[1], 0, 0, rep(param1[2], nfeature))
+#     outparam <- list(betainv = betainv, thetarel = thetarel, nfeature = nfeature,
+#                      kernelname = kname, ARD = FALSE)
+#   } else {
+#     cat("Running second stage optim (ARD)\n")
+#     stop("not finished yet.")
+#
+#     thetarel_noard <- c(param1[1], 0, 0, rep(param1[2], nfeature))
+#     betainv_noard <- betainv
+#
+#     flush.console()
+#     # kname = "gaussiandotrel"
+#
+#     rel <- c(betainv, param1[1], rep(param1[2], nfeature))
+#
+#     ans2 <- optim(rel, loglikerel2, grad_gauss_loglikerel2, method = "L-BFGS-B",
+#                   lower = rep(1e-6, length(rel)), upper = rep(Inf, length(rel)),
+#                   control = list(maxit = optim_ard_max, trace = optim_ard_trace,
+#                                  REPORT = optim_ard_report, fnscale = -1.0),
+#                   ds2_train2mx = x, train_y = y, ncpu = in_ncpu)
+#     #
+#     cat("Second stage optim (RBF with ARD) convergence (0: success; 1: maxit reached)=", ans2$convergence, "msg=", ans2$message, "\n")
+#     flush.console()
+#
+#     betainv <- ans2$par[1]
+#     thetarel <- c(ans2$par[2], 0, 0, ans2$par[3:length(ans2$par)])
+#     outparam <- list(betainv = betainv, thetarel = thetarel,
+#                      nfeature = nfeature, kernelname = kname, ARD = TRUE,
+#                      thetarel_noard = thetarel_noard,
+#                      betainv_noard = betainv_noard)
+#
+#   }
+#   return(outparam)
+# }
+# ########
 
 # method = c("solve", "cg_direct", "cg_ichol")
 gpr_train <- function(train_x, train_y, kparam, method = "solve",

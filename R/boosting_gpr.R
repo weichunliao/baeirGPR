@@ -1,5 +1,5 @@
 gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
-                      n_model = 50, batch_size = 1000, lr = 0.1, tune_param = FALSE, tune_size = NULL,
+                      n_model = 500, batch_size = 1000, lr = 0.1, tune_param = FALSE, tune_size = NULL,
                       update_kparam_tiems = 50, update_col_sample = 50,
                       kname = "gaussiandotrel", ktheta = NULL,
                       kbetainv = NULL, ncpu = -1) {
@@ -40,14 +40,14 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
       temp_model$lr <- lr
       all_gpr_models[[iter_id]] <- temp_model
       # ///////
-      pred_test_y <- gpr_predict(test_x, train_x[train_ind,], temp_model) ##testing data
-
-      if(iter_id > 1){
-        rmse_test <- sqrt(mean((adj_test_y - pred_test_y*lr)^2))
-      } else {
-        rmse_test <- sqrt(mean((adj_test_y - pred_test_y)^2))
-      }
-      all_test_rmse[iter_id] <- rmse_test
+      # pred_test_y <- gpr_predict(test_x, train_x[train_ind,], temp_model) ##testing data
+      #
+      # if(iter_id > 1){
+      #   rmse_test <- sqrt(mean((adj_test_y - pred_test_y*lr)^2))
+      # } else {
+      #   rmse_test <- sqrt(mean((adj_test_y - pred_test_y)^2))
+      # }
+      # all_test_rmse[iter_id] <- rmse_test
       # //////////
       # cat(" (GPR noard) rmse (test); ", "iter_id=", iter_id, "->", rmse_test, "\n")
       pred_train_y <- gpr_predict(train_x, train_x[train_ind,], temp_model) ##training data
@@ -142,13 +142,13 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
       temp_model$col_sampling_idx <- col_sampling_idx
       all_gpr_models[[iter_id]] <- temp_model
       # /////////
-      pred_test_y <- gpr_predict(test_x[,col_sampling_idx], train_x[train_ind,col_sampling_idx], temp_model)
-      if (iter_id > 1) {
-        rmse_test <- sqrt(mean((adj_test_y - pred_test_y*lr)^2))
-      } else {
-        rmse_test <- sqrt(mean((adj_test_y - pred_test_y)^2))
-      }
-      all_test_rmse[iter_id] <- rmse_test
+      # pred_test_y <- gpr_predict(test_x[,col_sampling_idx], train_x[train_ind,col_sampling_idx], temp_model)
+      # if (iter_id > 1) {
+      #   rmse_test <- sqrt(mean((adj_test_y - pred_test_y*lr)^2))
+      # } else {
+      #   rmse_test <- sqrt(mean((adj_test_y - pred_test_y)^2))
+      # }
+      # all_test_rmse[iter_id] <- rmse_test
       # /////////
       pred_train_y <- gpr_predict(train_x[,col_sampling_idx], train_x[train_ind,col_sampling_idx], temp_model)
       rmse_train <- sqrt(mean((adj_y - pred_train_y)^2))
@@ -163,7 +163,7 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
       }
     }
   }
-  plot(all_test_rmse[1:n_model], type = 'l')
+  # plot(all_test_rmse[1:n_model], type = 'l')
   # plot(all_train_rmse[1:n_model], type = 'l')
   # cat("train_rmse:", all_train_rmse, "\n")
   # cat("test_rmse:", all_test_rmse, "\n")
