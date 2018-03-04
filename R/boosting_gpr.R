@@ -1,8 +1,13 @@
 gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
-                      n_model = 500, batch_size = 1000, lr = 0.1, tune_param = FALSE, tune_size = NULL,
+                      n_model = 500, batch_size = 1000, lr = 0.1,
+                      tune_param = FALSE, tune_size = NULL,
                       update_kparam_tiems = 50, update_col_sample = 50,
                       kname = "gaussiandotrel", ktheta = NULL,
                       kbetainv = NULL, ncpu = -1) {
+  if (is.null(ktheta) | is.null(kbetainv)) {
+    cat("[ERROR] miss kernel parameter.")
+    return(-1)
+  }
   kparam <- list(betainv = kbetainv, thetarel = ktheta, kernelname = kname)
   all_gpr_models <- vector("list", n_model)
 
@@ -68,7 +73,7 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
           cat("update theta......\n")
           # tune_size <- batch_size
           tune_ind <- sample(n_data, tune_size)
-          kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind])
+          kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind], ARD = TRUE, init_betainv = kparam$betainv, init_theta = kparam$thetarel)
         }
       }
     }
@@ -113,7 +118,7 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
         if(iter_id %% update_kparam_tiems == 0) {
           cat("update theta......\n")
           tune_ind <- sample(n_data, tune_size)
-          kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind])
+          kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind], ARD = TRUE, init_betainv = kparam$betainv, init_theta = kparam$thetarel)
         }
       }
     }
@@ -130,7 +135,7 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "1",
         # col_sampling_train_x <- train_x[,col_sampling_idx]
         # tune_size <- 100
         tune_ind <- sample(n_data, tune_size)
-        kparam <- gpr_tune(train_x[tune_ind,col_sampling_idx], adj_y[tune_ind], ARD = FALSE)
+        kparam <- gpr_tune(train_x[tune_ind,col_sampling_idx], adj_y[tune_ind], ARD = FALSE, init_betainv = kparam$betainv, init_theta = kparam$thetarel)
       }
       cat("Now, running for iteration", iter_id, "\n")
 
