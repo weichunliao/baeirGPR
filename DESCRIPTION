@@ -2,7 +2,7 @@ Package: baeirGPR
 Type: Package
 Title: Traing a Gaussian Process Regression and Conduct Predictions.
 Version: 0.1.1
-Date: 2018-03-04
+Date: 2018-03-05
 Authors@R: c(
   person("Hsin-Min", "Lu", email="luim@ntu.edu.tw", role=c("aut", "cre", "cph")),
   person("Wei-Chun", "Liao", role="aut")

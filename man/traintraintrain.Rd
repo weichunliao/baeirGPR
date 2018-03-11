@@ -4,9 +4,9 @@
 \alias{traintraintrain}
 \title{Gaussian process regression}
 \usage{
-traintraintrain(train_x, train_y, pred_method = "sr", tune_param = TRUE,
-  ARD = TRUE, kname = "gaussiandotrel", ktheta = NULL, kbetainv = NULL,
-  ncpu = -1, srsize = NULL, tsize = NULL, clus_size = NULL)
+traintraintrain(train_x, train_y, pred_method = "sr",
+  kname = "gaussiandotrel", ktheta = NULL, kbetainv = NULL, ncpu = -1,
+  srsize = NULL, clus_size = NULL)
 }
 \arguments{
 \item{train_x}{Matrix; the features of training data set.}
@@ -19,12 +19,6 @@ usebigK: use built-in matrix inversion
 local_gpr: use Local GPR method
 sr: subset regressors}
 
-\item{tune_param}{Boolean; Set to TRUE to tune parameters of kernel function
-default value is TRUE.}
-
-\item{ARD}{Boolean; set to TRUE to use ARD when tuning param;
-default value is TRUE.}
-
 \item{kname}{String; the name of kernel; default value is 'gaussiandotrel'.}
 
 \item{ktheta}{Numeric vector; store kernel parameter;
@@ -36,14 +30,15 @@ shuld be provided when tune_param is FALSE.}
 \item{ncpu}{Integer; the number of thread to be used;
 set to -1 to use all threads; default value is -1.}
 
-\item{srsize}{Integer; the size of subtraining dataset;
+\item{srsize}{Non-negative integer; the size of subtraining dataset;
 should be provided when pred_method = 'sr'}
 
-\item{tsize}{Integer; parameter used for model tuning (tune_param = TRUE),
-only tsize of training points will be used for model tuning}
-
-\item{clus_size}{Integer; parameter for local_gpr: set the cluster size;
+\item{clus_size}{Non-negative integer;
+parameter for local_gpr: set the cluster size;
 should be provided when pred_method = 'local_gpr'.}
+
+\item{tsize}{Non-negative integer; parameter used for model tuning (tune_param = TRUE),
+only tsize of training points will be used for model tuning}
 }
 \value{
 return a list having four objects:

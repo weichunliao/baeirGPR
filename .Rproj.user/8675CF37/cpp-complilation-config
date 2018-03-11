@@ -10,7 +10,7 @@
         "-fpic",
         "-DU_STATIC_IMPLEMENTATION"
     ],
-    "hash" : "1511686296",
+    "hash" : "1520249267",
     "is_cpp" : true,
     "pch" : "Rcpp"
 }

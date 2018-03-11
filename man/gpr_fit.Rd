@@ -4,7 +4,7 @@
 \alias{gpr_fit}
 \title{Gaussian process regression}
 \usage{
-gpr_fit(testmx, gprmodel, ncpu = -1)
+gpr_fit(testmx, trainmx, gprmodel, ncpu = -1)
 }
 \arguments{
 \item{testmx}{Matrix; the features of testing dateset}
@@ -22,5 +22,5 @@ set to -1 to use all threads; default value is -1.}
 the prediction of testing dataset.
 }
 \description{
-Gaussian process regression
+GPR prediction
 }
