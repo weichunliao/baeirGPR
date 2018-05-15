@@ -30,14 +30,14 @@ shuld be provided when tune_param is FALSE.}
 \item{ncpu}{Integer; the number of thread to be used;
 set to -1 to use all threads; default value is -1.}
 
-\item{srsize}{Non-negative integer; the size of subtraining dataset;
+\item{srsize}{Positive integer; the size of subtraining dataset;
 should be provided when pred_method = 'sr'}
 
-\item{clus_size}{Non-negative integer;
+\item{clus_size}{Positive integer;
 parameter for local_gpr: set the cluster size;
 should be provided when pred_method = 'local_gpr'.}
 
-\item{tsize}{Non-negative integer; parameter used for model tuning (tune_param = TRUE),
+\item{tsize}{Positive integer; parameter used for model tuning (tune_param = TRUE),
 only tsize of training points will be used for model tuning}
 }
 \value{

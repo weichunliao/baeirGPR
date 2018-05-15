@@ -4,9 +4,10 @@
 \alias{gbm_train}
 \title{Gradient boosting machine based on GPR}
 \usage{
-gbm_train(train_x, train_y, test_x, test_y, pred_method = "1",
-  n_model = 500, batch_size = 1000, lr = 0.1, tune_param = FALSE,
-  tune_size = NULL, update_kparam_tiems = 50, update_col_sample = 50,
+gbm_train(train_x, train_y, test_x, test_y, pred_method = "2",
+  n_model = 500, batch_size = 1000, lr = 0.1, decay_lr = 1,
+  tune_param = FALSE, tune_size = NULL, sr_size = NULL,
+  update_kparam_tiems = 50, update_col_sample = 50, update_lr = 50,
   kname = "gaussiandotrel", ktheta = NULL, kbetainv = NULL, ncpu = -1)
 }
 \arguments{
@@ -19,18 +20,24 @@ gbm_train(train_x, train_y, test_x, test_y, pred_method = "1",
 2: random row sampling.
 3: row sampling plus col sampling.}
 
-\item{n_model}{Non-negative integer; the number of submodel in gbm.}
+\item{n_model}{Positive number of submodel in gbm.}
 
-\item{batch_size}{Non-negative integer; batch size for each iteration.}
+\item{batch_size}{Positive integer; batch size for each iteration.}
 
 \item{lr}{Numeric between 0-1; learning rate.}
+
+\item{decay_lr}{Numeric between 0-1; decay learning rate, default = 1 (no decay).}
 
 \item{tune_param}{Boolean; Set to TRUE to tune parameters of kernel function
 default value is TRUE.}
 
-\item{tune_size}{Non-negative integer; size of tuning data set.}
+\item{tune_size}{Positve integer; size of tuning data set.}
 
-\item{update_col_sample}{Non-negative integer; time to update kernel parameter(for method 3).}
+\item{sr_size}{Positive integer; size of sub dataset in gbm_sr}
+
+\item{update_col_sample}{Positive integer; time to update kernel parameter(for method 3).}
+
+\item{update_lr}{Positive integer; time to decay learning rate; default is 50.}
 
 \item{kname}{String; the name of kernel; default value is 'gaussiandotrel'.}
 
@@ -47,7 +54,7 @@ set to -1 to use all threads; default value is -1.}
 default value for pred_method 1 & 2 is TRUE.
 default value for pred_method 3 is FALSE.}
 
-\item{update_kparam_times}{Non-negative integer; time to update kernel parameter(for method 1/2).}
+\item{update_kparam_times}{Positve integer; time to update kernel parameter(for method 1/2).}
 }
 \value{
 return a list having four objects:

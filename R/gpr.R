@@ -14,9 +14,15 @@ gpr_train <- function(train_x, train_y, kparam, method = "solve",
   if(method != "cg_direct_lm") {
     # cat("constructing bigK\n")
     flush.console()
+    # cat(dim(train_x), 'zzzzzz\n')
+    # aaa = rep(0,length(kparam$thetarel))
+    # cat(debug1, kparam$kernelname, length(kparam$thetarel), '|', param2,'|', in_ncpu, "ppppp\n")
+    # t1 <- system.time(bigK <- tcrossprod_t(train_x, train_x, 1, debug1, kparam$kernelname, aaa, param2, in_ncpu))
+
     t1 <- system.time(bigK <- tcrossprod_t(train_x, train_x, 1, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
     # cat("bigK consumed time:\n")
     # print(t1)
+    # return(9)
     flush.console()
     diagAddConst(bigK, kparam$betainv, 1)
   }

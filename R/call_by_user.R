@@ -16,11 +16,11 @@
 #'   shuld be provided when tune_param is FALSE.
 #' @param ncpu Integer; the number of thread to be used;
 #'   set to -1 to use all threads; default value is -1.
-#' @param srsize Non-negative integer; the size of subtraining dataset;
+#' @param srsize Positive integer; the size of subtraining dataset;
 #'   should be provided when pred_method = 'sr'
-#' @param tsize Non-negative integer; parameter used for model tuning (tune_param = TRUE),
+#' @param tsize Positive integer; parameter used for model tuning (tune_param = TRUE),
 #'   only tsize of training points will be used for model tuning
-#' @param clus_size Non-negative integer;
+#' @param clus_size Positive integer;
 #'   parameter for local_gpr: set the cluster size;
 #'   should be provided when pred_method = 'local_gpr'.
 #'
