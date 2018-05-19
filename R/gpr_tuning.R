@@ -31,6 +31,21 @@ gpr_tune <- function (x, y, kernelname = "rbf", ARD = TRUE,
                       optim_rbf_max = 100, optim_trace = 1, optim_report = 5,
                       optim_ard_max = 50, optim_ard_trace = 1,
                       optim_ard_report = 5, in_ncpu = -1) {
+  if (is.null(optim_rbf_max)) {
+    if (is.null(init_theta)) {
+      optim_rbf_max = 100
+    } else {
+      optim_rbf_max = 20
+    }
+  }
+
+  if (is.null(optim_ard_max)) {
+    if (is.null(init_theta)) {
+      optim_ard_max = 50
+    } else {
+      optim_ard_max = 20
+    }
+  }
 
   if(kernelname == "rbf") {
     kname <- "gaussiandotrel"

@@ -39,7 +39,7 @@
 #' @export
 gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "2",
                       n_model = 500, batch_size = 1000, lr = 0.1, decay_lr = 1,
-                      tune_param = FALSE, tune_size = NULL, sr_size = NULL,
+                      tune_param = FALSE, tune_size = NULL, sr_size = NULL, selected_n_feature = NULL,
                       update_kparam_tiems = 50, update_col_sample = 50, update_lr = 50,
                       kname = "gaussiandotrel", ktheta = NULL,
                       kbetainv = NULL, ncpu = -1) {
@@ -130,7 +130,9 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "2",
             cat("update theta......\n")
             # tune_size <- batch_size
             tune_ind <- sample(n_data, tune_size)
-            kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind], ARD = tune_param, init_betainv = kparam$betainv, init_theta = kparam$thetarel)
+            kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind], optim_ard_max = 20,
+                               ARD = tune_param, init_betainv = kparam$betainv,
+                               init_theta = kparam$thetarel)
           }
         }
       }
@@ -183,7 +185,9 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "2",
           if(iter_id %% update_kparam_tiems == 0) {
             cat("update theta......\n")
             tune_ind <- sample(n_data, tune_size)
-            kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind], ARD = tune_param, init_betainv = kparam$betainv, init_theta = kparam$thetarel)
+            kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind], optim_ard_max = 20,
+                               ARD = tune_param, init_betainv = kparam$betainv,
+                               init_theta = kparam$thetarel)
           }
         }
       }
@@ -196,11 +200,14 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "2",
     origin_kparam <- kparam
 
     n_feature <- ncol(train_x)
-    if (n_feature > 50) {
-      selected_n_feature <- floor(sqrt(n_feature))
-    } else {
-      selected_n_feature <- floor(n_feature/2)
+    if (is.null(selected_n_feature)) {
+      if (n_feature > 50) {
+        selected_n_feature <- floor(sqrt(n_feature))
+      } else {
+        selected_n_feature <- floor(n_feature/2)
+      }
     }
+
     for(iter_id in 1:n_model) {
       if (iter_id %% update_lr == 0) {
         lr = lr*decay_lr
@@ -211,7 +218,9 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "2",
         # col_sampling_train_x <- train_x[,col_sampling_idx]
         # tune_size <- 100
         tune_ind <- sample(n_data, tune_size)
-        kparam <- gpr_tune(train_x[tune_ind,col_sampling_idx], adj_y[tune_ind], ARD = tune_param, init_betainv = kparam$betainv, init_theta = kparam$thetarel)
+        kparam <- gpr_tune(train_x[tune_ind,col_sampling_idx], adj_y[tune_ind],
+                           ARD = tune_param, init_betainv = kparam$betainv,
+                           init_theta = kparam$thetarel)
       }
       cat("Now, running for iteration", iter_id, "\n")
 
@@ -296,7 +305,9 @@ gbm_train <- function(train_x, train_y, test_x, test_y, pred_method = "2",
           if(iter_id %% update_kparam_tiems == 0) {
             cat("update theta......\n")
             tune_ind <- sample(n_data, tune_size)
-            kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind], ARD = tune_param, init_betainv = kparam$betainv, init_theta = kparam$thetarel)
+            kparam <- gpr_tune(train_x[tune_ind,], adj_y[tune_ind],
+                               ARD = tune_param, init_betainv = kparam$betainv,
+                               init_theta = kparam$thetarel)
           }
         }
       }
