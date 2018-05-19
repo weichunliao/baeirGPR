@@ -228,17 +228,17 @@ gpr_train_sr <- function(train_x, train_y, kparam, csize, in_ncpu) {
 
   debug1 <- 0
   sym2 <- 0
-  cat("compute kmn\n")
+  # cat("compute kmn\n")
   flush.console()
   t1 <- system.time(kmn <- tcrossprod_t(subtrain, train_x, sym2, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
 
-  cat("kmn consumed time:\n")
-  print(t1)
+  # cat("kmn consumed time:\n")
+  # print(t1)
   flush.console()
 
   t1 <- system.time(kmn_cross <- tcrossprod(kmn))
-  cat("tcrossprod consumed time:\n")
-  print(t1)
+  # cat("tcrossprod consumed time:\n")
+  # print(t1)
 
   alpha <- solve((kmn_cross + kparam$betainv * out1), kmn %*% train_y)
 
