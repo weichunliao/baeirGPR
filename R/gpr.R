@@ -210,37 +210,49 @@ gpr_predict <- function(testmx, trainmx, gprmodel, in_ncpu = -1) {
 
 
 gpr_train_sr <- function(train_x, train_y, kparam, csize, in_ncpu) {
-  cat("gpr_sr trainer\n")
+  # cat("gpr_sr trainer\n")
 
   # obslist <- c(1:csize)
   ndata <- nrow(train_x)
-  obslist <- sample(ndata, csize)
-  cat("gpr_train_sr: subset size=", csize, "\n")
-  cat("training data size=", nrow(train_x), "\n")
-  flush.console()
 
-  subtrain <- train_x[obslist, ]
-  debug1 <- 0
-  param2 <- 1
-  t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, 1, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
-  cat("out1 consumed time:\n")
-  print(t1)
+  try_inverse <- TRUE
 
-  debug1 <- 0
-  sym2 <- 0
-  # cat("compute kmn\n")
-  flush.console()
-  t1 <- system.time(kmn <- tcrossprod_t(subtrain, train_x, sym2, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
+  while (try_inverse) {
 
-  # cat("kmn consumed time:\n")
-  # print(t1)
-  flush.console()
+    obslist <- sample(ndata, csize)
+    cat("gpr_train_sr: subset size=", csize, "\n")
+    cat("training data size=", nrow(train_x), "\n")
+    flush.console()
 
-  t1 <- system.time(kmn_cross <- tcrossprod(kmn))
-  # cat("tcrossprod consumed time:\n")
-  # print(t1)
+    subtrain <- train_x[obslist, ]
+    debug1 <- 0
+    param2 <- 1
+    t1 <- system.time(out1 <- tcrossprod_t(subtrain, subtrain, 1, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
+    # cat("out1 consumed time:\n")
+    # print(t1)
 
-  alpha <- solve((kmn_cross + kparam$betainv * out1), kmn %*% train_y)
+    debug1 <- 0
+    sym2 <- 0
+    # cat("compute kmn\n")
+    flush.console()
+    t1 <- system.time(kmn <- tcrossprod_t(subtrain, train_x, sym2, debug1, kparam$kernelname, kparam$thetarel, param2, in_ncpu))
 
-  return(list(alpha = alpha, kparam = kparam, obslist = obslist))
+    # cat("kmn consumed time:\n")
+    # print(t1)
+    flush.console()
+
+    t1 <- system.time(kmn_cross <- tcrossprod(kmn))
+    # cat("tcrossprod consumed time:\n")
+    # print(t1)
+
+    possibleError<- tryCatch({
+      alpha <- solve((kmn_cross + kparam$betainv * out1), kmn %*% train_y)
+    }, error = function(err) err
+    )
+
+    if(!inherits(possibleError, "error")) {
+      try_inverse <- FALSE
+      return(list(alpha = alpha, kparam = kparam, obslist = obslist))
+    }
+  }
 }

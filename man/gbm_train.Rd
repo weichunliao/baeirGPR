@@ -7,8 +7,9 @@
 gbm_train(train_x, train_y, test_x, test_y, pred_method = "2",
   n_model = 500, batch_size = 1000, lr = 0.1, decay_lr = 1,
   tune_param = FALSE, tune_size = NULL, sr_size = NULL,
-  update_kparam_tiems = 50, update_col_sample = 50, update_lr = 50,
-  kname = "gaussiandotrel", ktheta = NULL, kbetainv = NULL, ncpu = -1)
+  selected_n_feature = NULL, update_kparam_tiems = 50,
+  update_col_sample = 50, update_lr = 50, kname = "gaussiandotrel",
+  ktheta = NULL, kbetainv = NULL, ncpu = -1)
 }
 \arguments{
 \item{train_x}{Matrix; the features of training data set.}
