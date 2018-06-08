@@ -28,8 +28,8 @@
 #' @export
 gpr_tune <- function (x, y, kernelname = "rbf", ARD = TRUE,
                       init_betainv = NULL, init_theta = NULL,
-                      optim_rbf_max = 100, optim_trace = 1, optim_report = 5,
-                      optim_ard_max = 50, optim_ard_trace = 1,
+                      optim_rbf_max = NULL, optim_trace = 1, optim_report = 5,
+                      optim_ard_max = NULL, optim_ard_trace = 1,
                       optim_ard_report = 5, in_ncpu = -1) {
   if (is.null(optim_rbf_max)) {
     if (is.null(init_theta)) {
