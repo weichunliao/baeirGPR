@@ -355,10 +355,13 @@ gbm_fit <- function(testmx, test_y, trainmx, gbm_model, ncpu = -1){
   for (iter_id in 1:n_model) {
     cat("the i-th iteration of prediction:", iter_id, "\n")
     if ((pred_method == "1") | (pred_method == "2")) {
-      pred_test_y = gpr_predict(testmx, trainmx[models[[iter_id]]$sub_sample_idx,], models[[iter_id]])
+      pred_test_y <- gpr_predict(testmx, trainmx[models[[iter_id]]$sub_sample_idx,], models[[iter_id]])
     } else if (pred_method == "3") {
       # gpr_predict(test_x[,col_sampling_idx], train_x[train_ind,col_sampling_idx], temp_model)
-      pred_test_y = gpr_predict(testmx[, models[[iter_id]]$col_sampling_idx], trainmx[models[[iter_id]]$sub_sample_idx, models[[iter_id]]$col_sampling_idx], models[[iter_id]])
+      pred_test_y <- gpr_predict(testmx[, models[[iter_id]]$col_sampling_idx], trainmx[models[[iter_id]]$sub_sample_idx, models[[iter_id]]$col_sampling_idx], models[[iter_id]])
+    } else if (pred_method == "gbm_sr") {
+      # pred_test_y <- gpr_predict(test_x, train_x[train_ind,], temp_model)
+      pred_test_y <- gpr_predict(testmx, trainmx[models[[iter_id]]$sub_sample_idx,], models[[iter_id]])#####################
     }
     if (iter_id > 1) {
       accumulate_test_y <- accumulate_test_y + (pred_test_y * models[[iter_id]]$lr)
